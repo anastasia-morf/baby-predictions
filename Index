@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0c0e13"/>
+  <title>BabyMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0c0e13; --bg2:#10131a; --card:#141820; --card2:#1a1f2c;
+      --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+      --text:#e3e6f2; --muted:#7a7f9a; --faint:#44485e;
+      --yes:#06d6a0; --yes-bg:rgba(6,214,160,0.10); --yes-bd:rgba(6,214,160,0.30);
+      --no:#f05252;  --no-bg:rgba(240,82,82,0.10);  --no-bd:rgba(240,82,82,0.30);
+      --blue:#4f7aff; --blue-bg:rgba(79,122,255,0.10); --blue-bd:rgba(79,122,255,0.28);
+      --gold:#f5c842; --r:10px; --r2:7px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+    body{background:var(--bg);color:var(--text);font-family:"Inter",ui-sans-serif,system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;}
+    button,input,select{font:inherit;color:inherit;background:none;border:none;}
+    button{cursor:pointer;}
+
+    /* ── LOADING SCREEN ── */
+    #splash{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s ease;}
+    #splash.hide{opacity:0;pointer-events:none;}
+    .sp-icon{font-size:3rem;}
+    .sp-msg{font-size:.88rem;font-weight:700;letter-spacing:.01em;}
+    .sp-track{width:120px;height:3px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;}
+    .sp-fill{height:100%;background:linear-gradient(90deg,var(--yes),var(--blue));border-radius:99px;animation:shimmer 1.4s ease-in-out infinite;}
+    @keyframes shimmer{0%{transform:translateX(-200%);}100%{transform:translateX(400%);}}
+
+    /* ── HEADER ── */
+    .hd{position:sticky;top:0;z-index:50;background:rgba(12,14,19,0.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--border);}
+    .hd-inner{max-width:1100px;margin:0 auto;padding:0 14px;height:54px;display:flex;align-items:center;gap:12px;}
+    .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;letter-spacing:-.02em;flex-shrink:0;}
+    .logo-icon{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#06d6a0,#4f7aff);display:grid;place-items:center;font-size:13px;}
+    .logo-sub{color:var(--muted);font-weight:500;font-size:.72rem;margin-top:1px;}
+    .hd-mid{flex:1;display:flex;justify-content:center;}
+    .live-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;background:rgba(6,214,160,0.08);border:1px solid rgba(6,214,160,0.22);color:var(--yes);font-size:.72rem;font-weight:700;}
+    .live-dot{width:5px;height:5px;border-radius:50%;background:var(--yes);animation:blink 1.5s infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .hd-right{display:flex;align-items:center;gap:8px;}
+    .pos-pill{display:none;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:var(--blue-bg);border:1px solid var(--blue-bd);color:var(--blue);font-size:.75rem;font-weight:700;}
+    .pos-pill.show{display:flex;}
+
+    /* ── TICKER ── */
+    .ticker{border-bottom:1px solid var(--border);padding:8px 14px;display:flex;gap:20px;overflow-x:auto;scrollbar-width:none;max-width:1100px;margin:0 auto;}
+    .ticker::-webkit-scrollbar{display:none;}
+    .tick{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:.75rem;}
+    .tick-label{color:var(--muted);font-weight:500;}
+    .tick-val{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;}
+    .tick-dot{width:5px;height:5px;border-radius:50%;background:var(--yes);animation:blink 2s infinite;}
+
+    /* ── GUEST ROW ── */
+    .guest-row{padding:11px 14px;border-bottom:1px solid var(--border);max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:10px;}
+    .guest-lbl{color:var(--muted);font-size:.8rem;font-weight:600;white-space:nowrap;}
+    .guest-in{flex:1;max-width:240px;padding:7px 11px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-weight:600;outline:none;transition:border-color .15s;}
+    .guest-in::placeholder{color:var(--faint);}
+    .guest-in:focus{border-color:var(--blue-bd);}
+
+    /* ── TABS ── */
+    .tabs{display:flex;border-bottom:1px solid var(--border);max-width:1100px;margin:0 auto;overflow-x:auto;scrollbar-width:none;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab{padding:11px 16px;border-bottom:2px solid transparent;color:var(--muted);font-weight:600;font-size:.83rem;white-space:nowrap;cursor:pointer;transition:color .15s;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;}
+    .tab:hover{color:var(--text);}
+    .tab.on{color:var(--text);border-bottom-color:var(--blue);}
+    .tab .n{margin-left:5px;padding:1px 6px;background:rgba(255,255,255,0.07);border-radius:4px;font-size:.7rem;}
+
+    /* ── VIEWS ── */
+    .view{display:none;}
+    .view.on{display:block;}
+    .view-inner{max-width:1100px;margin:0 auto;padding:16px 14px 140px;}
+
+    /* ── MARKETS GRID ── */
+    .mgrid{display:grid;gap:10px;}
+    @media(min-width:600px){.mgrid{grid-template-columns:1fr 1fr;}}
+    @media(min-width:900px){.mgrid{grid-template-columns:repeat(3,1fr);}}
+
+    /* ── MARKET CARD ── */
+    .mc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px;transition:border-color .2s;}
+    .mc.picked{border-color:var(--blue-bd);}
+    .mc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;}
+    .mc-cat{font-size:.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+    .mc-icon{font-size:1rem;flex-shrink:0;}
+    .mc-q{font-size:.92rem;font-weight:700;color:var(--text);line-height:1.35;margin-bottom:13px;}
+    .outcomes{display:grid;gap:6px;margin-bottom:11px;}
+    .orow{position:relative;border-radius:var(--r2);overflow:hidden;cursor:pointer;border:1px solid transparent;transition:border-color .15s;}
+    .orow.sel{border-color:var(--blue-bd);}
+    .orow-bg{position:absolute;inset:0;background:rgba(255,255,255,0.025);}
+    .orow-fill{position:absolute;top:0;left:0;bottom:0;border-radius:var(--r2);transition:width .65s cubic-bezier(.2,.75,.3,1);}
+    .orow-fill.c0{background:rgba(6,214,160,0.12);}
+    .orow-fill.c1{background:rgba(240,82,82,0.10);}
+    .orow-fill.c2{background:rgba(79,122,255,0.10);}
+    .orow-fill.c3{background:rgba(245,200,66,0.10);}
+    .orow-content{position:relative;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;gap:8px;}
+    .orow-label{font-size:.83rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;}
+    .orow-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);opacity:0;box-shadow:0 0 7px rgba(79,122,255,0.8);transition:opacity .15s;}
+    .orow.sel .orow-dot{opacity:1;}
+    .orow-price{font-size:.88rem;font-weight:800;font-variant-numeric:tabular-nums;transition:color .15s;}
+    .orow-price.c0{color:var(--yes);}
+    .orow-price.c1{color:var(--no);}
+    .orow-price.c2{color:var(--blue);}
+    .orow-price.c3{color:var(--gold);}
+    .orow.sel .orow-price{color:var(--blue)!important;}
+    @keyframes pop-in{0%{transform:scale(.97);}60%{transform:scale(1.02);}100%{transform:scale(1);}}
+    .orow.popping{animation:pop-in .22s ease;}
+    .mc-text-in{width:100%;padding:9px 11px;margin-bottom:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-weight:600;outline:none;transition:border-color .15s;}
+    .mc-text-in::placeholder{color:var(--faint);}
+    .mc-text-in:focus{border-color:var(--blue-bd);}
+    .mc-foot{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);}
+    .mc-meta{display:flex;gap:10px;}
+    .mc-stat{font-size:.7rem;color:var(--muted);font-weight:600;}
+    .mc-badge{display:none;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:4px;background:var(--blue-bg);border:1px solid var(--blue-bd);color:var(--blue);}
+    .mc-badge.show{display:block;}
+
+    /* ── SUBMIT BAR ── */
+    .sub-bar{position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(12,14,19,0.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);padding:11px 14px calc(11px + env(safe-area-inset-bottom));}
+    .sub-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px;}
+    .prog-wrap{flex:1;}
+    .prog-lbl{font-size:.76rem;font-weight:600;color:var(--muted);margin-bottom:5px;}
+    .prog-track{height:3px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;}
+    .prog-fill{height:100%;background:linear-gradient(90deg,var(--yes),var(--blue));border-radius:99px;transition:width .4s ease;}
+    .sub-btn{padding:11px 20px;border-radius:var(--r2);background:linear-gradient(135deg,#06d6a0,#4f7aff);color:#fff;font-weight:800;font-size:.88rem;white-space:nowrap;flex-shrink:0;transition:filter .15s,transform .12s;}
+    .sub-btn:hover{filter:brightness(1.07);}
+    .sub-btn:active{transform:scale(.97);}
+    .sub-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+    /* ── RESULTS ── */
+    .res-sec{margin-bottom:20px;}
+    .res-sec-title{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+    .res-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 15px;}
+    .res-card-q{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:13px;}
+    .res-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .res-row:last-child{margin-bottom:0;}
+    .res-label{width:110px;flex-shrink:0;font-size:.8rem;font-weight:600;color:var(--text);}
+    .res-track{flex:1;height:7px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;}
+    .res-bar{height:100%;background:linear-gradient(90deg,#4f7aff,#06d6a0);border-radius:99px;width:0;transition:width .7s cubic-bezier(.2,.7,.3,1);}
+    .res-pct{width:36px;text-align:right;font-size:.78rem;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;}
+    .name-chips{display:flex;flex-wrap:wrap;gap:6px;}
+    .nc{padding:5px 9px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:5px;font-size:.78rem;font-weight:700;color:var(--text);}
+    .nc-by{color:var(--muted);font-weight:500;}
+    .empty-txt{color:var(--muted);font-size:.82rem;font-weight:600;padding:8px 0;}
+
+    /* ── PORTFOLIO ── */
+    .port-empty{text-align:center;padding:56px 0;color:var(--muted);font-weight:600;font-size:.9rem;}
+    .port-empty .pe-icon{font-size:2.6rem;margin-bottom:12px;}
+    .pos-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .pos-card-q{font-size:.87rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+    .pos-card-pick{font-size:.77rem;color:var(--muted);}
+    .pos-card-pick strong{color:var(--blue);}
+    .pos-right{text-align:right;flex-shrink:0;}
+    .pos-price{font-size:.83rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;}
+    .pos-pnl{font-size:.83rem;font-weight:800;font-variant-numeric:tabular-nums;}
+    .pos-pnl.up{color:var(--yes);}
+    .pos-pnl.dn{color:var(--no);}
+
+    /* ── LEADERBOARD ── */
+    .lb-table{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+    .lb-row{display:grid;grid-template-columns:44px 1fr auto auto;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border);font-size:.85rem;font-weight:600;}
+    .lb-row:last-child{border-bottom:none;}
+    .lb-row:nth-child(even){background:rgba(255,255,255,0.015);}
+    .lb-rank{font-weight:700;color:var(--muted);font-size:.95rem;}
+    .lb-rank.medal{font-size:1.15rem;}
+    .lb-score{font-weight:800;color:var(--yes);font-variant-numeric:tabular-nums;}
+    .lb-pct{font-size:.72rem;color:var(--muted);margin-left:6px;}
+
+    /* ── ADMIN ── */
+    .admin-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;}
+    .admin-head{padding:13px 15px;border-bottom:1px solid var(--border);font-size:.9rem;font-weight:700;}
+    .admin-body{padding:15px;}
+    .resolve-grid{display:grid;gap:10px;}
+    .resolve-item{display:grid;gap:6px;}
+    .resolve-lbl{font-size:.75rem;font-weight:600;color:var(--muted);}
+    .resolve-sel{width:100%;padding:8px 11px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-weight:600;outline:none;cursor:pointer;}
+    .resolve-sel:focus{border-color:var(--blue-bd);}
+    .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+    .btn{padding:8px 14px;border-radius:var(--r2);border:1px solid var(--border2);background:rgba(255,255,255,0.05);color:var(--text);font-weight:700;font-size:.8rem;transition:background .15s,transform .12s;}
+    .btn:hover{background:rgba(255,255,255,0.09);}
+    .btn:active{transform:scale(.97);}
+    .btn.green{background:var(--yes-bg);border-color:var(--yes-bd);color:var(--yes);}
+    .btn.blue{background:var(--blue-bg);border-color:var(--blue-bd);color:var(--blue);}
+    .btn.red{background:var(--no-bg);border-color:var(--no-bd);color:var(--no);}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(6px);z-index:99;padding:9px 16px;background:#1c2030;border:1px solid var(--border2);border-radius:8px;color:var(--text);font-weight:700;font-size:.83rem;white-space:nowrap;box-shadow:0 16px 36px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+    ::-webkit-scrollbar{width:4px;height:4px;}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+    @media(prefers-reduced-motion:reduce){*,.orow-fill,.res-bar,.prog-fill,.sp-fill{transition-duration:0.001s!important;animation:none!important;}}
+  </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="splash">
+  <div class="sp-icon">🍼</div>
+  <div class="sp-msg" id="splashMsg" style="color:var(--blue)">Connecting to markets…</div>
+  <div class="sp-track"><div class="sp-fill"></div></div>
+</div>
+
+<!-- HEADER -->
+<header class="hd">
+  <div class="hd-inner">
+    <div class="logo">
+      <div class="logo-icon">🍼</div>
+      <div>BabyMarket<div class="logo-sub">Prediction Market</div></div>
+    </div>
+    <div class="hd-mid"><div class="live-badge"><div class="live-dot"></div> LIVE</div></div>
+    <div class="hd-right">
+      <div id="posPill" class="pos-pill">📋 <span id="posCount">0</span> positions</div>
+    </div>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker" id="ticker"><div class="tick"><div class="tick-dot"></div></div></div>
+
+<!-- GUEST ROW -->
+<div class="guest-row">
+  <label class="guest-lbl" for="gname">Trader name</label>
+  <input id="gname" class="guest-in" type="text" placeholder="Your name" autocomplete="name"/>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on"  onclick="go('markets',this)">Markets <span class="n">10</span></button>
+  <button class="tab"     onclick="go('portfolio',this)">Portfolio</button>
+  <button class="tab"     onclick="go('results',this)">Results</button>
+  <button class="tab"     onclick="go('leaderboard',this)">Leaderboard</button>
+  <button class="tab"     onclick="go('admin',this)">🔑 Admin</button>
+</div>
+
+<!-- VIEWS -->
+<div id="v-markets"     class="view on"><div class="view-inner"><div id="mgrid" class="mgrid"></div></div></div>
+<div id="v-portfolio"   class="view"><div class="view-inner" id="portBody"></div></div>
+<div id="v-results"     class="view"><div class="view-inner" id="resBody"></div></div>
+<div id="v-leaderboard" class="view"><div class="view-inner" id="lbBody"></div></div>
+<div id="v-admin" class="view">
+  <div class="view-inner">
+    <div class="admin-card">
+      <div class="admin-head">🏁 Resolve markets</div>
+      <div class="admin-body">
+        <p style="font-size:.78rem;color:var(--muted);margin-bottom:14px;">Set the correct answer for each market after baby arrives, then save to unlock the leaderboard.</p>
+        <div class="resolve-grid" id="resolveGrid"></div>
+        <div class="btn-row">
+          <button class="btn green" onclick="saveKey()">Save resolution</button>
+          <button class="btn blue"  onclick="calcScores()">Recalculate scores</button>
+        </div>
+      </div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-head">📦 Export &amp; manage</div>
+      <div class="admin-body">
+        <p style="font-size:.78rem;color:var(--muted);margin-bottom:14px;">Export all trades from Firestore, or permanently delete all data.</p>
+        <div class="btn-row">
+          <button class="btn" onclick="xCsv()">Export CSV</button>
+          <button class="btn" onclick="xJson()">Export JSON</button>
+          <button class="btn red" onclick="nuke()">Delete all data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="sub-bar" id="subBar">
+  <div class="sub-inner">
+    <div class="prog-wrap">
+      <div class="prog-lbl" id="progLbl">0 / 10 positions placed</div>
+      <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <button class="sub-btn" id="subBtn" onclick="submit()">Submit trades →</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  /* ── FIREBASE ── */
+  import { initializeApp }              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, getDocs }
+                                         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDlpRHGRat9mrmE-n72eFdpyBoK5NeqXdQ",
+    authDomain:        "baby-predictions.firebaseapp.com",
+    projectId:         "baby-predictions",
+    storageBucket:     "baby-predictions.firebasestorage.app",
+    messagingSenderId: "39067482263",
+    appId:             "1:39067482263:web:e72fb5e2024539725c91d2"
+  };
+
+  const fbApp      = initializeApp(firebaseConfig);
+  const firestore  = getFirestore(fbApp);
+  const ballotsCol = collection(firestore, "ballots");
+
+  /* ── STATE ── */
+  const AK = "bmAnswerKeyV1";
+  const ansKey    = () => { try{ return JSON.parse(localStorage.getItem(AK))||{}; } catch{ return {}; } };
+  const setAnsKey = k  => localStorage.setItem(AK, JSON.stringify(k));
+
+  let cachedBallots = []; // live-synced from Firestore
+  let picks = {};         // current unsaved session picks
+
+  /* ── MARKETS ── */
+  const MARKETS = [
+    { id:"arrival",  cat:"ARRIVAL",  icon:"📅", q:"Will baby arrive before the due date?",        opts:["Early 🏃","On time ✅","Fashionably late 😅"] },
+    { id:"weight",   cat:"PHYSICAL", icon:"⚖️", q:"What will baby's birth weight be?",            opts:["Under 3.0 kg","3.0 – 3.5 kg","Over 3.5 kg"] },
+    { id:"length",   cat:"PHYSICAL", icon:"📏", q:"How long will baby be at birth?",              opts:["Under 49 cm","49 – 52 cm","Over 52 cm"] },
+    { id:"gender",   cat:"GENDER",   icon:"👶", q:"Boy or girl?",                                 opts:["Boy","Girl"] },
+    { id:"initial",  cat:"NAME",     icon:"🔤", q:"First letter of baby's name?",                opts:["A – H","I – Q","R – Z"] },
+    { id:"cries",    cat:"REACTION", icon:"😭", q:"Who will cry first in the delivery room?",     opts:["Mum","Dad","Someone else 👀"] },
+    { id:"looks",    cat:"GENETICS", icon:"🧬", q:"Who will baby look more like?",               opts:["Mum","Dad","Both equally"] },
+    { id:"time",     cat:"ARRIVAL",  icon:"⏰", q:"What time of day will baby arrive?",           opts:["Morning","Afternoon","Night"] },
+    { id:"hair",     cat:"PHYSICAL", icon:"✨", q:"How much hair will baby have?",               opts:["None at all","A little bit","Full head 👑"] },
+    { id:"namerec",  cat:"NAME",     icon:"💎", q:"Drop a baby name recommendation",              type:"text", placeholder:"Your name suggestion…" }
+  ];
+
+  /* ── FIRESTORE REAL-TIME LISTENER ── */
+  let unsubscribe = onSnapshot(
+    ballotsCol,
+    snap => {
+      cachedBallots = snap.docs.map(d => ({ _fid: d.id, ...d.data() }));
+      hideSplash();
+      renderMarkets();
+      renderResults();
+      renderLeaderboard();
+      syncTicker();
+    },
+    err => {
+      console.error("Firestore error:", err);
+      document.getElementById("splashMsg").textContent = "⚠️ Could not connect. Check Firestore rules.";
+      document.getElementById("splashMsg").style.color = "#f05252";
+    }
+  );
+
+  function hideSplash() {
+    const s = document.getElementById("splash");
+    if (!s.classList.contains("hide")) {
+      s.classList.add("hide");
+      setTimeout(() => s.style.display = "none", 450);
+    }
+  }
+
+  /* ── PERCENTAGES ── */
+  function pcts(mid, opts) {
+    const bs = cachedBallots.filter(b => b.a?.[mid]);
+    if (!bs.length) return opts.map(() => Math.round(100 / opts.length));
+    return opts.map(o => Math.round(bs.filter(b => b.a[mid] === o).length / bs.length * 100));
+  }
+
+  /* ── RENDER MARKETS ── */
+  function renderMarkets() {
+    const g = document.getElementById("mgrid");
+    g.innerHTML = "";
+    MARKETS.forEach(m => g.appendChild(buildCard(m)));
+    syncProgress();
+    syncPosPill();
+  }
+
+  function buildCard(m) {
+    const card = document.createElement("div");
+    card.className = "mc" + (picks[m.id] ? " picked" : "");
+    card.id = "mc-" + m.id;
+    const traders = cachedBallots.filter(b => b.a?.[m.id]).length;
+    const vol = (traders * 100).toLocaleString();
+
+    if (m.type === "text") {
+      const sugs = cachedBallots.map(b => ({ n: b.g, v: b.a?.[m.id] })).filter(x => x.v);
+      card.innerHTML = `
+        <div class="mc-top"><div class="mc-cat">${m.cat}</div><div class="mc-icon">${m.icon}</div></div>
+        <div class="mc-q">${esc(m.q)}</div>
+        <input class="mc-text-in" id="ti-${m.id}" type="text" placeholder="${esc(m.placeholder||'')}" value="${esc(picks[m.id]||'')}"/>
+        <div class="mc-foot">
+          <div class="mc-meta"><span class="mc-stat">📝 ${sugs.length} suggestions</span></div>
+          <div class="mc-badge${picks[m.id] ? " show" : ""}" id="badge-${m.id}">In Portfolio</div>
+        </div>`;
+      card.querySelector(".mc-text-in").addEventListener("input", e => {
+        const v = e.target.value.trim();
+        if (v) picks[m.id] = v; else delete picks[m.id];
+        card.className = "mc" + (picks[m.id] ? " picked" : "");
+        const badge = document.getElementById("badge-" + m.id);
+        if (badge) badge.className = "mc-badge" + (picks[m.id] ? " show" : "");
+        syncProgress(); syncPosPill();
+      });
+      return card;
+    }
+
+    const ps = pcts(m.id, m.opts);
+    card.innerHTML = `
+      <div class="mc-top"><div class="mc-cat">${m.cat}</div><div class="mc-icon">${m.icon}</div></div>
+      <div class="mc-q">${esc(m.q)}</div>
+      <div class="outcomes" id="oc-${m.id}"></div>
+      <div class="mc-foot">
+        <div class="mc-meta"><span class="mc-stat">👥 ${traders}</span><span class="mc-stat">💰 $${vol}</span></div>
+        <div class="mc-badge${picks[m.id] ? " show" : ""}" id="badge-${m.id}">In Portfolio</div>
+      </div>`;
+
+    const oc = card.querySelector(`#oc-${m.id}`);
+    m.opts.forEach((opt, i) => {
+      const row = document.createElement("div");
+      row.className = "orow" + (picks[m.id] === opt ? " sel" : "");
+      row.innerHTML = `
+        <div class="orow-bg"></div>
+        <div class="orow-fill c${i % 4}" style="width:${ps[i]}%;"></div>
+        <div class="orow-content">
+          <div class="orow-label"><div class="orow-dot"></div>${esc(opt)}</div>
+          <div class="orow-price c${i % 4}">${ps[i]}¢</div>
+        </div>`;
+      row.addEventListener("click", () => {
+        if (picks[m.id] === opt) delete picks[m.id];
+        else { picks[m.id] = opt; row.classList.add("popping"); setTimeout(() => row.classList.remove("popping"), 250); }
+        refreshCard(m); syncProgress(); syncPosPill();
+      });
+      oc.appendChild(row);
+    });
+    return card;
+  }
+
+  function refreshCard(m) {
+    const card = document.getElementById("mc-" + m.id);
+    if (!card || m.type === "text") return;
+    card.className = "mc" + (picks[m.id] ? " picked" : "");
+    const ps = pcts(m.id, m.opts);
+    card.querySelectorAll(".orow").forEach((row, i) => {
+      row.classList.toggle("sel", picks[m.id] === m.opts[i]);
+      const fill  = row.querySelector(".orow-fill");
+      const price = row.querySelector(".orow-price");
+      if (fill)  fill.style.width   = ps[i] + "%";
+      if (price) price.textContent  = ps[i] + "¢";
+    });
+    const badge = document.getElementById("badge-" + m.id);
+    if (badge) badge.className = "mc-badge" + (picks[m.id] ? " show" : "");
+  }
+
+  function syncProgress() {
+    const done  = MARKETS.filter(m => picks[m.id]).length;
+    const total = MARKETS.length;
+    document.getElementById("progFill").style.width = Math.round(done / total * 100) + "%";
+    document.getElementById("progLbl").textContent  =
+      done === total ? `All ${total} positions placed — ready to submit!` : `${done} / ${total} positions placed`;
+  }
+
+  function syncPosPill() {
+    const done = MARKETS.filter(m => picks[m.id]).length;
+    const pill = document.getElementById("posPill");
+    if (done > 0) { pill.classList.add("show"); document.getElementById("posCount").textContent = done; }
+    else          { pill.classList.remove("show"); }
+  }
+
+  function syncTicker() {
+    const t     = document.getElementById("ticker");
+    const first = t.querySelector(".tick");
+    t.innerHTML = "";
+    t.appendChild(first);
+    [
+      { lbl: "Markets", val: MARKETS.length },
+      { lbl: "Traders", val: cachedBallots.length },
+      { lbl: "Volume",  val: "$" + (cachedBallots.length * 1000).toLocaleString() },
+      { lbl: "My picks",val: MARKETS.filter(m => picks[m.id]).length + " / " + MARKETS.length },
+    ].forEach(item => {
+      const el = document.createElement("div"); el.className = "tick";
+      el.innerHTML = `<span class="tick-label">${item.lbl}</span><span class="tick-val">${item.val}</span>`;
+      t.appendChild(el);
+    });
+  }
+
+  /* ── SUBMIT (async, writes to Firestore) ── */
+  async function submit() {
+    const g = document.getElementById("gname").value.trim();
+    if (!g) { toast("Enter your trader name first 🐠"); document.getElementById("gname").focus(); return; }
+    const missing = MARKETS.filter(m => !picks[m.id]);
+    if (missing.length) { toast(`${missing.length} market${missing.length > 1 ? "s" : ""} still need a pick`); return; }
+
+    const btn = document.getElementById("subBtn");
+    btn.textContent = "Submitting…"; btn.disabled = true;
+    try {
+      await addDoc(ballotsCol, { g, at: new Date().toISOString(), a: { ...picks } });
+      picks = {};
+      syncProgress(); syncPosPill(); syncTicker();
+      // renderMarkets is called automatically by onSnapshot
+      toast("Trades submitted! 🎉");
+      window.go("results", document.querySelector(".tab:nth-child(3)"));
+    } catch (e) {
+      console.error(e);
+      toast("⚠️ Submit failed — check your connection");
+    } finally {
+      btn.textContent = "Submit trades →"; btn.disabled = false;
+    }
+  }
+
+  /* ── RESULTS ── */
+  function renderResults() {
+    const body = document.getElementById("resBody");
+    body.innerHTML = "";
+    if (!cachedBallots.length) {
+      body.innerHTML = '<div class="empty-txt">No trades yet — be the first to place picks.</div>';
+      return;
+    }
+    MARKETS.forEach(m => {
+      const sec   = document.createElement("div"); sec.className = "res-sec";
+      const title = document.createElement("div"); title.className = "res-sec-title"; title.textContent = m.icon + "  " + m.cat;
+      const card  = document.createElement("div"); card.className = "res-card";
+      const q     = document.createElement("div"); q.className = "res-card-q"; q.textContent = m.q;
+      card.appendChild(q);
+
+      if (m.type === "choice") {
+        const total = cachedBallots.filter(b => b.a?.[m.id]).length || 1;
+        m.opts.forEach(opt => {
+          const cnt = cachedBallots.filter(b => b.a?.[m.id] === opt).length;
+          const pct = Math.round(cnt / total * 100);
+          const row = document.createElement("div"); row.className = "res-row";
+          row.innerHTML = `<div class="res-label">${esc(opt)}</div><div class="res-track"><div class="res-bar" style="width:0%"></div></div><div class="res-pct">${pct}%</div>`;
+          card.appendChild(row);
+          requestAnimationFrame(() => { row.querySelector(".res-bar").style.width = pct + "%"; });
+        });
+      } else {
+        const names = cachedBallots.map(b => ({ n: b.g, v: b.a?.[m.id] })).filter(x => x.v);
+        if (!names.length) { card.innerHTML += '<div class="empty-txt">No suggestions yet.</div>'; }
+        else {
+          const wrap = document.createElement("div"); wrap.className = "name-chips";
+          names.forEach(item => {
+            const c = document.createElement("div"); c.className = "nc";
+            c.innerHTML = `${esc(item.v)} <span class="nc-by">by ${esc(item.n)}</span>`;
+            wrap.appendChild(c);
+          });
+          card.appendChild(wrap);
+        }
+      }
+      sec.appendChild(title); sec.appendChild(card); body.appendChild(sec);
+    });
+  }
+
+  /* ── PORTFOLIO ── */
+  function renderPortfolio() {
+    const body = document.getElementById("portBody");
+    body.innerHTML = "";
+    const open = MARKETS.filter(m => picks[m.id]);
+    if (!open.length) {
+      body.innerHTML = `<div class="port-empty"><div class="pe-icon">📭</div>No open positions.<br>Head to Markets to place your picks.</div>`;
+      return;
+    }
+    const hdr = document.createElement("div"); hdr.className = "res-sec-title"; hdr.textContent = "OPEN POSITIONS";
+    body.appendChild(hdr);
+    open.forEach(m => {
+      const ps    = pcts(m.id, m.opts || []);
+      const idx   = (m.opts || []).indexOf(picks[m.id]);
+      const cur   = idx >= 0 ? ps[idx] : 50;
+      const delta = cur - 50;
+      const card  = document.createElement("div"); card.className = "pos-card";
+      card.innerHTML = `
+        <div>
+          <div class="pos-card-q">${esc(m.q)}</div>
+          <div class="pos-card-pick">Position: <strong>${esc(picks[m.id])}</strong></div>
+        </div>
+        <div class="pos-right">
+          <div class="pos-price">${cur}¢</div>
+          <div class="pos-pnl ${delta >= 0 ? "up" : "dn"}">${delta >= 0 ? "+" : ""}${delta}¢</div>
+        </div>`;
+      body.appendChild(card);
+    });
+  }
+
+  /* ── LEADERBOARD ── */
+  function renderLeaderboard() {
+    const body = document.getElementById("lbBody");
+    body.innerHTML = "";
+    if (!cachedBallots.length) { body.innerHTML = '<div class="empty-txt">No traders yet.</div>'; return; }
+    const key = ansKey();
+    if (!Object.keys(key).length) { body.innerHTML = '<div class="empty-txt">Leaderboard unlocks when markets are resolved in Admin.</div>'; return; }
+    const choiceMs = MARKETS.filter(m => m.type !== "text");
+    const max      = choiceMs.length;
+    const scored   = cachedBallots
+      .map(b => { let s = 0; choiceMs.forEach(m => { if (b.a?.[m.id] && b.a[m.id] === key[m.id]) s++; }); return { g: b.g, s }; })
+      .sort((a, b) => b.s - a.s || a.g.localeCompare(b.g));
+    const medals   = ["🥇","🥈","🥉"];
+    const title    = document.createElement("div"); title.className = "res-sec-title"; title.textContent = "TOP TRADERS";
+    const tbl      = document.createElement("div"); tbl.className = "lb-table";
+    scored.forEach((item, i) => {
+      const row = document.createElement("div"); row.className = "lb-row";
+      const top = i < 3;
+      row.innerHTML = `<div class="lb-rank${top ? " medal" : ""}">${top ? medals[i] : i + 1}</div><div>${esc(item.g)}</div><div class="lb-score">${item.s}<span class="lb-pct">/${max}</span></div><div class="lb-pct">${Math.round(item.s / max * 100)}%</div>`;
+      tbl.appendChild(row);
+    });
+    body.appendChild(title); body.appendChild(tbl);
+  }
+
+  /* ── ADMIN: RESOLVE ── */
+  function renderResolveGrid() {
+    const grid = document.getElementById("resolveGrid");
+    const key  = ansKey();
+    grid.innerHTML = "";
+    MARKETS.filter(m => m.type !== "text").forEach(m => {
+      const item = document.createElement("div"); item.className = "resolve-item";
+      const lbl  = document.createElement("div"); lbl.className = "resolve-lbl"; lbl.textContent = m.icon + "  " + m.q;
+      const sel  = document.createElement("select"); sel.className = "resolve-sel"; sel.dataset.id = m.id;
+      sel.innerHTML = `<option value="">— Not resolved —</option>`;
+      m.opts.forEach(o => {
+        const op = document.createElement("option"); op.value = o; op.textContent = o;
+        if (key[m.id] === o) op.selected = true;
+        sel.appendChild(op);
+      });
+      item.appendChild(lbl); item.appendChild(sel); grid.appendChild(item);
+    });
+  }
+
+  function saveKey() {
+    const k = {};
+    document.querySelectorAll(".resolve-sel").forEach(s => { if (s.value) k[s.dataset.id] = s.value; });
+    setAnsKey(k); renderLeaderboard();
+    toast("Markets resolved ✅");
+  }
+
+  function calcScores() { renderLeaderboard(); }
+
+  /* ── EXPORT ── */
+  function xCsv() {
+    if (!cachedBallots.length) return toast("No data yet.");
+    const hdr  = ["trader","submittedAt",...MARKETS.map(m => m.id)];
+    const rows = cachedBallots.map(b => [b.g, b.at, ...MARKETS.map(m => b.a?.[m.id] || "")]);
+    dl([hdr,...rows].map(r => r.map(c => `"${String(c).replaceAll('"','""')}"`).join(",")).join("\n"), "babymarket.csv", "text/csv");
+  }
+
+  function xJson() {
+    if (!cachedBallots.length) return toast("No data yet.");
+    dl(JSON.stringify(cachedBallots, null, 2), "babymarket.json", "application/json");
+  }
+
+  function dl(content, fname, type) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([content], { type }));
+    a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  /* ── NUKE (deletes from Firestore) ── */
+  async function nuke() {
+    if (!confirm("Permanently delete ALL ballot data from Firestore?\n\nThis removes everyone's predictions and cannot be undone.")) return;
+    try {
+      const snap = await getDocs(ballotsCol);
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(firestore, "ballots", d.id))));
+      localStorage.removeItem(AK);
+      picks = {};
+      renderResolveGrid(); syncTicker();
+      toast("All server data deleted.");
+    } catch (e) {
+      console.error(e);
+      toast("⚠️ Delete failed: " + e.message);
+    }
+  }
+
+  /* ── TABS ── */
+  function go(id, btn) {
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("on"));
+    document.getElementById("v-" + id)?.classList.add("on");
+    if (btn) btn.classList.add("on");
+    document.getElementById("subBar").style.display = id === "markets" ? "" : "none";
+    if (id === "results")     renderResults();
+    if (id === "portfolio")   renderPortfolio();
+    if (id === "leaderboard") renderLeaderboard();
+  }
+
+  /* ── TOAST ── */
+  let _tt;
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg; el.classList.add("show");
+    clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove("show"), 2800);
+  }
+
+  /* ── UTILS ── */
+  function esc(v) {
+    return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  /* ── EXPOSE TO WINDOW for onclick attributes ── */
+  window.go         = go;
+  window.submit     = submit;
+  window.saveKey    = saveKey;
+  window.calcScores = calcScores;
+  window.xCsv       = xCsv;
+  window.xJson      = xJson;
+  window.nuke       = nuke;
+
+  /* ── BOOT ── */
+  renderMarkets();
+  renderResolveGrid();
+  // data arrives via onSnapshot — no manual fetch needed
+</script>
+</body>
+</html>
